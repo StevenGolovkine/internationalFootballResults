@@ -25,7 +25,7 @@
 # 
 # ## Code
 # 
-# The entire code of this analysis is on my Github repository.
+# The entire code of this analysis is on my [Github](https://github.com/StevenGolovkine/internationalFootballResults) repository.
 # 
 # -----
 
@@ -40,24 +40,25 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+sns.set(style="whitegrid")
 
 
 # ## Import the data
 
-# In[3]:
+# In[43]:
 
 
 results = pd.read_csv("results.csv", sep=',', header=0)
 
 
-# In[5]:
+# In[3]:
 
 
 # Let's look at the data
 results.head()
 
 
-# In[12]:
+# In[4]:
 
 
 # Do the data have missing/null values?
@@ -65,7 +66,7 @@ print("There is", results.isna().sum().sum(), "missing value.")
 print("There is", results.isnull().sum().sum(), "null value.")
 
 
-# In[44]:
+# In[5]:
 
 
 print("Since ", results.date[0], ", there were ", len(results), " international football matches (until ", results.date[len(results) - 1], ").", sep='')
@@ -73,14 +74,105 @@ print("Since ", results.date[0], ", there were ", len(results), " international 
 
 # ## Exploration of the data
 
-# In[ ]:
+# * #### Which country played the most? 
+
+# In[6]:
 
 
+count_match_home = results.home_team.value_counts()
+count_match_away = results.away_team.value_counts()
+count_match = pd.DataFrame([count_match_home, count_match_away]).transpose().fillna(0)
+count_match['total'] = count_match.home_team + count_match.away_team
+count_match = count_match.sort_values('total', ascending=False)
 
 
+# In[7]:
 
-# In[42]:
+
+count_match_display = count_match[count_match.total > 500]
+
+# Initialize the matplotlib figure
+f, ax = plt.subplots(figsize=(10, 15))
+
+# Plot the total matches
+sns.set_color_codes("pastel")
+sns.barplot(x='total', y=count_match_display.index, data=count_match_display, label='Total', color='b')
+
+# Plot the home match 
+sns.set_color_codes("muted")
+sns.barplot(x="home_team", y=count_match_display.index, data=count_match_display, label='Home', color='b')
+
+# Add legend and informative axis label
+ax.legend(ncol=2, loc="lower right", frameon=True)
+ax.set_title("Number of games played by country")
+ax.set(xlabel="Number of matches played")
+sns.despine(left=True, bottom=True)
 
 
-help(print)
+# * #### Which country won the most?
+
+# In[81]:
+
+
+winner = pd.Series(np.zeros(len(results)))
+
+for idx in results.index:
+    if results.home_score.iloc[idx] > results.away_score.iloc[idx] :
+        winner.iloc[idx] = results.home_team.iloc[idx]
+    elif results.home_score.iloc[idx] < results.away_score.iloc[idx] :
+        winner.iloc[idx] = results.away_team.iloc[idx]
+    else :
+        winner.iloc[idx] = None
+        
+count_win = pd.DataFrame(winner.value_counts(), columns=['Win'])
+
+
+# In[84]:
+
+
+count_win_display = count_win[count_win > 200].dropna()
+
+# Initialize the matplotlib figure
+f, ax = plt.subplots(figsize=(10, 15))
+
+# Plot the total matches
+sns.set_color_codes("pastel")
+sns.barplot(x='Win', y=count_win_display.index, data=count_win_display, label='Total', color='b')
+
+# Add legend and informative axis label
+ax.legend(ncol=1, loc="lower right", frameon=True)
+ax.set_title("Number of games won by country")
+ax.set(xlabel="Number of matches won")
+sns.despine(left=True, bottom=True)
+
+
+# In[104]:
+
+
+winner_percent = pd.DataFrame(count_win['Win'] / pd.DataFrame(count_match['total'])['total'], columns=['Percent'])
+
+
+# In[113]:
+
+
+percent_win_display = winner_percent[winner_percent > 0.5].dropna().sort_values(by='Percent', ascending=False)
+
+# Initialize the matplotlib figure
+f, ax = plt.subplots(figsize=(10, 15))
+
+# Plot the total matches
+sns.set_color_codes("pastel")
+sns.barplot(x='Percent', y=percent_win_display.index, data=percent_win_display, label='Percent', color='b')
+
+# Add legend and informative axis label
+ax.legend(ncol=1, loc="lower right", frameon=True)
+ax.set_title("Percentage of games won by country")
+ax.set(xlabel="Percentage of matches won")
+sns.despine(left=True, bottom=True)
+
+
+# In[105]:
+
+
+winner_percent
 
